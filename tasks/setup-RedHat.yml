@@ -1,0 +1,35 @@
+---
+- name: "Install PostgreSQL"
+  block:
+    - name: "Disable PostgreSQL module"
+      shell: 'dnf -qy module disable postgresql'
+      args:
+        warn: false
+
+    - name: Ensure PostgreSQL packages are installed.
+      package:
+        name: "{{ postgresql_packages }}"
+        state: latest
+        enablerepo: "{{ postgresql_enablerepo }}"
+      when:  postgresql_enablerepo  | bool
+  
+    - name: "Install official PostgreSQL repo"
+      dnf:
+        name: 'https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm'
+        state: present
+        update_cache: True
+        disable_gpg_check: True
+        validate_certs: False
+      when:  not postgresql_enablerepo | bool
+
+    - name: Ensure PostgreSQL packages are installed.
+      package:
+        name: "{{ postgresql_packages }}"
+        state: latest
+      when: not postgresql_enablerepo 
+    
+    - name: Ensure PostgreSQL Python libraries are installed.
+      yum:
+        name: "{{ postgresql_python_library }}"
+        state: present
+        enablerepo: "{{ postgresql_enablerepo | default(omit, true) }}"

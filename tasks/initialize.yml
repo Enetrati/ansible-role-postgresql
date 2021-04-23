@@ -1,0 +1,23 @@
+---
+- name: "Check if /var/lib/pgsql/{{ __postgresql_version }}/data is empty"
+  find:
+    paths: "/var/lib/pgsql/{{ __postgresql_version }}/data"
+  register: files_found
+  become: true
+  become_user: "{{ postgresql_user }}"
+
+- name: Ensure PostgreSQL database is initialized.
+  command: "{{ __postgresql_bin_path }}/initdb -D {{ __postgresql_config_path }}"
+  ignore_errors: yes
+  become: true
+  become_user: "{{ postgresql_user }}"
+  when: files_found.matched < 1
+  vars:
+    ansible_ssh_pipelining: true
+
+- name: "Start Postgresql"
+  service:
+    name: "postgresql-{{ __postgresql_version }}"
+    state: started
+    enabled: yes
+  
